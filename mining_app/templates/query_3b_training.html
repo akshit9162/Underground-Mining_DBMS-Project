@@ -1,0 +1,369 @@
+{% extends 'base.html' %}
+
+{% block title %}Query 3B - Training & Certification Compliance{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header-detailed">
+        <h1>🎓 Query 3B: Training & Certification Compliance</h1>
+        <p>Track and monitor worker training completion and certification status</p>
+    </div>
+
+    <div class="query-info-box">
+        <h3>📚 What This Query Shows:</h3>
+        <p>Comprehensive analysis of worker training status including:</p>
+        <ul>
+            <li><strong>Total Trainings:</strong> All training records for each worker</li>
+            <li><strong>Completed Trainings:</strong> Successfully finished courses</li>
+            <li><strong>Expired Trainings:</strong> Outdated or expired certifications</li>
+            <li><strong>Active Certifications:</strong> Currently valid certificates with expiry dates</li>
+            <li><strong>Certification Status:</strong> Classification (Highly Certified, Certified, etc.)</li>
+            <li><strong>Completion Rate:</strong> Percentage of trainings completed</li>
+        </ul>
+        <p><strong>SQL Complexity:</strong> CASE WHEN, String Aggregation (LISTAGG), Multiple Conditions, GROUP BY</p>
+    </div>
+
+    {% if workers %}
+    <div class="results-section">
+        <h2>📋 Worker Training Compliance</h2>
+        <div class="table-responsive">
+            <table class="data-table training-table">
+                <thead>
+                    <tr>
+                        <th>Worker Name</th>
+                        <th>Role</th>
+                        <th>Total Trainings</th>
+                        <th>Completed</th>
+                        <th>Expired</th>
+                        <th>Completion %</th>
+                        <th>Certifications</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for worker in workers %}
+                    <tr class="cert-{{ worker.cert_status|lower|replace(' ', '-') }}">
+                        <td><strong>{{ worker.name }}</strong></td>
+                        <td><span class="badge">{{ worker.role }}</span></td>
+                        <td><span class="count-badge">{{ worker.total_trainings }}</span></td>
+                        <td><span class="count-green">{{ worker.completed }}</span></td>
+                        <td>
+                            {% if worker.expired > 0 %}
+                                <span class="count-red">{{ worker.expired }}</span>
+                            {% else %}
+                                <span class="count-green">0</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: {{ worker.completion_rate }}%;"></div>
+                                <span class="progress-text">{{ worker.completion_rate }}%</span>
+                            </div>
+                        </td>
+                        <td><small>{{ worker.certifications }}</small></td>
+                        <td>
+                            {% if worker.cert_status == 'HIGHLY CERTIFIED' %}
+                                <span class="status-badge highly-certified">⭐ HIGHLY CERTIFIED</span>
+                            {% elif worker.cert_status == 'CERTIFIED' %}
+                                <span class="status-badge certified">✓ CERTIFIED</span>
+                            {% elif worker.cert_status == 'IN PROGRESS' %}
+                                <span class="status-badge in-progress">→ IN PROGRESS</span>
+                            {% else %}
+                                <span class="status-badge not-certified">⚠️ NO CERTS</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="insights-section">
+        <h2>💡 Compliance Insights</h2>
+        <div class="insights-grid">
+            <div class="insight-card">
+                <h4>Highly Certified Workers</h4>
+                <p><strong>{{ workers|selectattr('cert_status', 'equalto', 'HIGHLY CERTIFIED')|list|length }}</strong></p>
+                <p>3+ active certifications</p>
+            </div>
+            <div class="insight-card">
+                <h4>Certified Workers</h4>
+                <p><strong>{{ workers|selectattr('cert_status', 'equalto', 'CERTIFIED')|list|length }}</strong></p>
+                <p>1-2 active certifications</p>
+            </div>
+            <div class="insight-card">
+                <h4>Average Completion Rate</h4>
+                <p><strong>{{ (workers|sum(attribute='completion_rate') / workers|length)|round(1) }}%</strong></p>
+                <p>Across all workers</p>
+            </div>
+            <div class="insight-card">
+                <h4>Total Expired</h4>
+                <p><strong>{{ workers|sum(attribute='expired') }}</strong></p>
+                <p>Require renewal</p>
+            </div>
+        </div>
+    </div>
+
+    {% else %}
+    <div class="empty-state">
+        <p>No training data available. Please add training records.</p>
+    </div>
+    {% endif %}
+
+    <div class="sql-explanation">
+        <h3>🔍 SQL Query Breakdown</h3>
+        <div class="code-block">
+            <pre>SELECT 
+    w.WorkerID, w.Name, w.Role,
+    COUNT(DISTINCT tr.TrainingID) AS TotalTrainings,
+    COUNT(CASE WHEN tr.TrainingStatus = 'Completed' THEN tr.TrainingID END) AS Completed,
+    COUNT(CASE WHEN tr.TrainingStatus = 'Expired' THEN tr.TrainingID END) AS Expired,
+    LISTAGG(tr.Course, ', ') WITHIN GROUP (ORDER BY tr.ValidUntil DESC) AS Certifications,
+    CASE 
+        WHEN COUNT(CASE WHEN tr.TrainingStatus = 'Completed' THEN 1 END) >= 3 THEN 'HIGHLY CERTIFIED'
+        ELSE 'CERTIFIED'
+    END AS CertificationStatus
+FROM Worker w
+LEFT JOIN Training_Record tr ON w.WorkerID = tr.WorkerID
+GROUP BY w.WorkerID, w.Name, w.Role
+ORDER BY Completed DESC;</pre>
+        </div>
+    </div>
+
+    <div style="margin-top: 30px; text-align: center;">
+        <a href="{{ url_for('index') }}" class="btn btn-secondary">← Back to Dashboard</a>
+    </div>
+</div>
+
+<style>
+.page-header-detailed {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 40px;
+    border-radius: 8px;
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+.page-header-detailed h1 {
+    margin: 0 0 10px 0;
+    font-size: 32px;
+}
+
+.query-info-box {
+    background: #f8f9fa;
+    border-left: 4px solid #667eea;
+    padding: 20px;
+    border-radius: 5px;
+    margin-bottom: 30px;
+}
+
+.query-info-box h3 {
+    margin-top: 0;
+}
+
+.query-info-box ul {
+    margin: 15px 0;
+    padding-left: 20px;
+}
+
+.query-info-box li {
+    margin: 8px 0;
+    line-height: 1.6;
+}
+
+.results-section {
+    margin-bottom: 40px;
+}
+
+.results-section h2 {
+    color: #333;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.training-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 5px;
+}
+
+.training-table thead {
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.training-table th {
+    padding: 12px;
+    text-align: left;
+    font-weight: 600;
+    color: #495057;
+}
+
+.training-table td {
+    padding: 12px;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.training-table tr:hover {
+    background-color: #f8f9fa;
+}
+
+.badge {
+    background-color: #667eea;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.count-badge {
+    background-color: #e3f2fd;
+    color: #1976d2;
+    padding: 4px 8px;
+    border-radius: 3px;
+    font-weight: 600;
+    display: inline-block;
+}
+
+.count-green {
+    background-color: #c8e6c9;
+    color: #1b5e20;
+    padding: 4px 8px;
+    border-radius: 3px;
+    font-weight: 600;
+}
+
+.count-red {
+    background-color: #ffcdd2;
+    color: #c62828;
+    padding: 4px 8px;
+    border-radius: 3px;
+    font-weight: 600;
+}
+
+.progress-bar {
+    background-color: #e0e0e0;
+    border-radius: 10px;
+    height: 20px;
+    position: relative;
+    overflow: hidden;
+}
+
+.progress-fill {
+    background: linear-gradient(90deg, #4caf50, #8bc34a);
+    height: 100%;
+    transition: width 0.3s;
+}
+
+.progress-text {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 11px;
+    font-weight: 600;
+    color: #333;
+}
+
+.status-badge {
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.status-badge.highly-certified {
+    background-color: #c8e6c9;
+    color: #1b5e20;
+}
+
+.status-badge.certified {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+}
+
+.status-badge.in-progress {
+    background-color: #fff9c4;
+    color: #f57f17;
+}
+
+.status-badge.not-certified {
+    background-color: #ffcdd2;
+    color: #c62828;
+}
+
+.insights-section {
+    margin: 40px 0;
+}
+
+.insights-section h2 {
+    color: #333;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.insights-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.insight-card {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+}
+
+.insight-card h4 {
+    margin: 0 0 10px 0;
+    color: #666;
+    font-size: 13px;
+}
+
+.insight-card p {
+    margin: 5px 0;
+    font-size: 13px;
+    color: #999;
+}
+
+.insight-card strong {
+    color: #667eea;
+    font-size: 20px;
+}
+
+.sql-explanation {
+    background: #f5f5f5;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 20px;
+    margin-top: 40px;
+}
+
+.code-block {
+    background: #1e1e1e;
+    color: #d4d4d4;
+    padding: 15px;
+    border-radius: 4px;
+    overflow-x: auto;
+    font-family: monospace;
+    font-size: 12px;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    color: white;
+    padding: 12px 30px;
+    border-radius: 5px;
+    text-decoration: none;
+}
+</style>
+{% endblock %}

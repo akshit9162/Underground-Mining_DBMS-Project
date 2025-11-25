@@ -1,0 +1,509 @@
+{% extends 'base.html' %}
+
+{% block title %}Query 3A - Worker Utilization Matrix{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Header -->
+    <div class="page-header-detailed">
+        <h1>📊 Query 3A: Worker Utilization Matrix</h1>
+        <p>Multi-dimensional analysis of worker productivity and equipment utilization</p>
+    </div>
+
+    <!-- Query Description -->
+    <div class="query-info-box">
+        <h3>🔍 What This Query Shows:</h3>
+        <p>
+            This complex analytical query provides a <strong>comprehensive view of worker productivity</strong> by measuring:
+        </p>
+        <ul>
+            <li><strong>Assigned Shifts:</strong> Number of shifts assigned to each worker</li>
+            <li><strong>Total Assigned Hours:</strong> Sum of shift durations</li>
+            <li><strong>Equipment Types Used:</strong> Diversity of equipment operated</li>
+            <li><strong>Actual Hours Worked:</strong> Real hours logged in usage records</li>
+            <li><strong>Utilization Percentage:</strong> Actual vs Assigned hours ratio</li>
+            <li><strong>Incident Rate:</strong> Incidents per shift (safety indicator)</li>
+            <li><strong>Performance Level:</strong> Classification based on utilization</li>
+        </ul>
+        <p><strong>SQL Complexity:</strong> Multiple JOINs, GROUP BY, Window Functions (RANK, PERCENT_RANK), Aggregations</p>
+    </div>
+
+    <!-- Results Table -->
+    {% if workers %}
+    <div class="results-section">
+        <h2>👥 Worker Utilization Analysis</h2>
+        <div class="table-responsive">
+            <table class="data-table utilization-table">
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Worker Name</th>
+                        <th>Role</th>
+                        <th>Department</th>
+                        <th>Assigned Shifts</th>
+                        <th>Assigned Hours</th>
+                        <th>Actual Hours</th>
+                        <th>Utilization %</th>
+                        <th>Equipment Types</th>
+                        <th>Incidents</th>
+                        <th>Performance</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for worker in workers %}
+                    <tr class="performance-{{ worker.performance_level|lower|replace(' ', '-') }}">
+                        <td><strong>#{{ worker.productivity_rank }}</strong></td>
+                        <td>{{ worker.name }}</td>
+                        <td><span class="badge">{{ worker.role }}</span></td>
+                        <td>{{ worker.dept or 'N/A' }}</td>
+                        <td>
+                            <span class="metric-value">{{ worker.assigned_shifts }}</span>
+                        </td>
+                        <td>
+                            <span class="metric-value">{{ worker.total_assigned_hours }}</span> hrs
+                        </td>
+                        <td>
+                            <span class="metric-value">{{ worker.actual_hours }}</span> hrs
+                        </td>
+                        <td>
+                            <div class="utilization-bar">
+                                <div class="utilization-fill" style="width: {{ [worker.utilization_pct, 100]|min }}%"></div>
+                                <span class="utilization-text">{{ worker.utilization_pct }}%</span>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="equipment-count">{{ worker.equipment_types }}</span>
+                        </td>
+                        <td>
+                            {% if worker.incidents > 0 %}
+                                <span class="incident-badge">{{ worker.incidents }}</span>
+                            {% else %}
+                                <span class="incident-badge safe">0</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if worker.performance_level == 'EXCELLENT' %}
+                                <span class="performance-badge excellent">⭐ EXCELLENT</span>
+                            {% elif worker.performance_level == 'GOOD' %}
+                                <span class="performance-badge good">✓ GOOD</span>
+                            {% elif worker.performance_level == 'FAIR' %}
+                                <span class="performance-badge fair">~ FAIR</span>
+                            {% else %}
+                                <span class="performance-badge low">↓ LOW</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Statistics Section -->
+    <div class="statistics-section">
+        <h2>📈 Key Statistics</h2>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h4>Average Utilization</h4>
+                <p class="stat-value">{{ (workers|sum(attribute='utilization_pct') / workers|length)|round(1) }}%</p>
+                <p class="stat-label">Across all active workers</p>
+            </div>
+            <div class="stat-card">
+                <h4>Total Shifts</h4>
+                <p class="stat-value">{{ workers|sum(attribute='assigned_shifts') }}</p>
+                <p class="stat-label">Combined assignments</p>
+            </div>
+            <div class="stat-card">
+                <h4>Top Performer</h4>
+                <p class="stat-value">{{ workers|first.name }}</p>
+                <p class="stat-label">{{ workers|first.actual_hours }} hours worked</p>
+            </div>
+            <div class="stat-card">
+                <h4>Equipment Diversity</h4>
+                <p class="stat-value">{{ workers|sum(attribute='equipment_types') }}</p>
+                <p class="stat-label">Total equipment types used</p>
+            </div>
+        </div>
+    </div>
+
+    {% else %}
+    <div class="empty-state">
+        <p>No worker utilization data available. Please assign workers to shifts.</p>
+    </div>
+    {% endif %}
+
+    <!-- Performance Legend -->
+    <div class="legend-section">
+        <h3>📋 Performance Levels Explained</h3>
+        <div class="legend-grid">
+            <div class="legend-item">
+                <span class="legend-badge excellent">EXCELLENT</span>
+                <p>≥ 80% utilization - Highly productive workers</p>
+            </div>
+            <div class="legend-item">
+                <span class="legend-badge good">GOOD</span>
+                <p>60-80% utilization - Good productivity</p>
+            </div>
+            <div class="legend-item">
+                <span class="legend-badge fair">FAIR</span>
+                <p>40-60% utilization - Moderate productivity</p>
+            </div>
+            <div class="legend-item">
+                <span class="legend-badge low">LOW</span>
+                <p>&lt; 40% utilization - Needs improvement</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- SQL Explanation -->
+    <div class="sql-explanation">
+        <h3>🔍 SQL Query Breakdown</h3>
+        <div class="code-block">
+            <pre>SELECT 
+    w.WorkerID, w.Name, w.Role,
+    COUNT(DISTINCT asn.ShiftID) AS AssignedShifts,
+    SUM(s.Duration) AS TotalAssignedHours,
+    COUNT(DISTINCT ur.EquipmentID) AS EquipmentTypes,
+    SUM(ur.HoursUsed) AS ActualHoursWorked,
+    ROUND(SUM(ur.HoursUsed) / SUM(s.Duration) * 100, 2) AS UtilizationPercent,
+    RANK() OVER (ORDER BY SUM(ur.HoursUsed) DESC) AS ProductivityRank
+FROM Worker w
+LEFT JOIN Assigned_Shift asn ON w.WorkerID = asn.WorkerID
+LEFT JOIN Shift s ON asn.ShiftID = s.ShiftID
+LEFT JOIN Usage_Record ur ON w.WorkerID = ur.WorkerID
+WHERE w.EmploymentStatus = 'Active'
+GROUP BY w.WorkerID, w.Name, w.Role
+ORDER BY ActualHoursWorked DESC;</pre>
+        </div>
+        <p><strong>Key Concepts:</strong>
+            <ul>
+                <li>Multiple LEFT JOINs: Connects workers to shifts and usage records</li>
+                <li>DISTINCT: Counts unique items (shifts, equipment)</li>
+                <li>Window Function RANK(): Ranks workers by productivity</li>
+                <li>Calculated Fields: Utilization percentage formula</li>
+                <li>WHERE Clause: Filters active employees only</li>
+            </ul>
+        </p>
+    </div>
+
+    <!-- Back Link -->
+    <div style="margin-top: 30px; text-align: center;">
+        <a href="{{ url_for('index') }}" class="btn btn-secondary">← Back to Dashboard</a>
+    </div>
+</div>
+
+<style>
+.page-header-detailed {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 40px;
+    border-radius: 8px;
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+.page-header-detailed h1 {
+    margin: 0 0 10px 0;
+    font-size: 32px;
+}
+
+.query-info-box {
+    background: #f8f9fa;
+    border-left: 4px solid #667eea;
+    padding: 20px;
+    border-radius: 5px;
+    margin-bottom: 30px;
+}
+
+.query-info-box h3 {
+    margin-top: 0;
+    color: #333;
+}
+
+.query-info-box ul {
+    margin: 15px 0;
+    padding-left: 20px;
+}
+
+.query-info-box li {
+    margin: 8px 0;
+    line-height: 1.6;
+}
+
+.results-section {
+    margin-bottom: 40px;
+}
+
+.results-section h2 {
+    color: #333;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.utilization-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.utilization-table thead {
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.utilization-table th {
+    padding: 12px;
+    text-align: left;
+    font-weight: 600;
+    color: #495057;
+    font-size: 13px;
+}
+
+.utilization-table td {
+    padding: 12px;
+    border-bottom: 1px solid #dee2e6;
+    font-size: 13px;
+}
+
+.utilization-table tr:hover {
+    background-color: #f8f9fa;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 3px;
+    background-color: #667eea;
+    color: white;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.metric-value {
+    font-weight: 600;
+    color: #667eea;
+    font-size: 14px;
+}
+
+.utilization-bar {
+    width: 100%;
+    height: 20px;
+    background-color: #e0e0e0;
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.utilization-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #4caf50 0%, #8bc34a 100%);
+    transition: width 0.3s;
+}
+
+.utilization-text {
+    position: absolute;
+    color: #333;
+    font-size: 11px;
+    font-weight: 600;
+    z-index: 1;
+}
+
+.equipment-count {
+    background-color: #e3f2fd;
+    color: #1976d2;
+    padding: 4px 8px;
+    border-radius: 3px;
+    font-weight: 600;
+    display: inline-block;
+}
+
+.incident-badge {
+    background-color: #ffcdd2;
+    color: #c62828;
+    padding: 4px 8px;
+    border-radius: 3px;
+    font-weight: 600;
+}
+
+.incident-badge.safe {
+    background-color: #c8e6c9;
+    color: #2e7d32;
+}
+
+.performance-badge {
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    display: inline-block;
+}
+
+.performance-badge.excellent {
+    background-color: #c8e6c9;
+    color: #1b5e20;
+}
+
+.performance-badge.good {
+    background-color: #f1f8e9;
+    color: #558b2f;
+}
+
+.performance-badge.fair {
+    background-color: #fff9c4;
+    color: #f57f17;
+}
+
+.performance-badge.low {
+    background-color: #ffccbc;
+    color: #bf360c;
+}
+
+.statistics-section {
+    margin: 40px 0;
+}
+
+.statistics-section h2 {
+    color: #333;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.stat-card {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.stat-card h4 {
+    margin: 0 0 10px 0;
+    color: #666;
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.stat-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: #667eea;
+    margin: 10px 0;
+}
+
+.stat-label {
+    margin: 0;
+    color: #999;
+    font-size: 12px;
+}
+
+.legend-section {
+    background: #f8f9fa;
+    padding: 25px;
+    border-radius: 8px;
+    margin: 40px 0;
+}
+
+.legend-section h3 {
+    margin-top: 0;
+    color: #333;
+    margin-bottom: 20px;
+}
+
+.legend-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.legend-badge {
+    padding: 8px 15px;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 12px;
+    min-width: 100px;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.legend-badge.excellent {
+    background-color: #c8e6c9;
+    color: #1b5e20;
+}
+
+.legend-badge.good {
+    background-color: #f1f8e9;
+    color: #558b2f;
+}
+
+.legend-badge.fair {
+    background-color: #fff9c4;
+    color: #f57f17;
+}
+
+.legend-badge.low {
+    background-color: #ffccbc;
+    color: #bf360c;
+}
+
+.legend-item p {
+    margin: 0;
+    color: #666;
+    font-size: 13px;
+}
+
+.sql-explanation {
+    background: #f5f5f5;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 20px;
+    margin-top: 40px;
+}
+
+.code-block {
+    background: #1e1e1e;
+    color: #d4d4d4;
+    padding: 15px;
+    border-radius: 4px;
+    overflow-x: auto;
+    margin: 15px 0;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    color: white;
+    padding: 12px 30px;
+    border-radius: 5px;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-secondary:hover {
+    background-color: #5a6268;
+}
+</style>
+{% endblock %}

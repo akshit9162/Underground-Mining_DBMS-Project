@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Worker Utilization - Mining Management{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>👥 Worker Utilization & Productivity</h2>
+    <p>Analyze worker hours, equipment usage, and incident patterns</p>
+</div>
+
+<div class="analytics-section">
+    <h3>📊 Worker Productivity Matrix</h3>
+    {% if workers_util %}
+    <table class="data-table" style="font-size: 0.9em;">
+        <thead>
+            <tr>
+                <th>Worker ID</th>
+                <th>Name</th>
+                <th>Role</th>
+                <th>Assigned Shifts</th>
+                <th>Actual Hours</th>
+                <th>Equipment Types</th>
+                <th>Incident Count</th>
+                <th>Utilization %</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in workers_util %}
+            <tr>
+                <td>{{ row.WorkerID }}</td>
+                <td><a href="{{ url_for('worker_detail', worker_id=row.WorkerID) }}">{{ row.Name }}</a></td>
+                <td>{{ row.Role }}</td>
+                <td>{{ row.assigned_shifts or 0 }}</td>
+                <td>{{ "%.1f"|format(row.actual_hours or 0) }} hrs</td>
+                <td>{{ row.equipment_types or 0 }}</td>
+                <td>{% if row.incident_count %}{{ row.incident_count }}{% else %}0{% endif %}</td>
+                <td>
+                    {% if row.assigned_shifts and row.actual_hours %}
+                        {{ "%.1f"|format((row.actual_hours / row.assigned_shifts / 8 * 100) if row.assigned_shifts > 0 else 0) }}%
+                    {% else %}
+                        0%
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="empty-state">No utilization data available. <a href="{{ url_for('init_database') }}">Initialize database</a> to load sample data.</p>
+    {% endif %}
+</div>
+{% endblock %}

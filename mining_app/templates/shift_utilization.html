@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}Shift Utilization - Mining Management{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>📅 Shift Utilization & Distribution</h2>
+    <p>Monitor shift capacity and resource allocation</p>
+</div>
+
+<div class="analytics-section">
+    <h3>📊 Shift Analysis</h3>
+    {% if shifts %}
+    <table class="data-table" style="font-size: 0.85em;">
+        <thead>
+            <tr>
+                <th>Shift ID</th>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Location</th>
+                <th>Max Workers</th>
+                <th>Assigned</th>
+                <th>Utilization %</th>
+                <th>Equipment In Use</th>
+                <th>Incidents</th>
+                <th>Capacity Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for shift in shifts %}
+            <tr>
+                <td>{{ shift.ShiftID }}</td>
+                <td>{{ shift.ShiftDate.strftime('%Y-%m-%d') if shift.ShiftDate else 'N/A' }}</td>
+                <td>{{ shift.ShiftTime }}</td>
+                <td>{{ shift.Location }}</td>
+                <td>{{ shift.MaxWorkers }}</td>
+                <td>{{ shift.assigned_count or 0 }}</td>
+                <td>
+                    {% if shift.MaxWorkers %}
+                        {{ "%.1f"|format((shift.assigned_count or 0) / shift.MaxWorkers * 100) }}%
+                    {% else %}
+                        0%
+                    {% endif %}
+                </td>
+                <td>{{ shift.equipment_in_use or 0 }}</td>
+                <td>{{ shift.incidents or 0 }}</td>
+                <td>
+                    {% if shift.assigned_count and shift.MaxWorkers %}
+                        {% if shift.assigned_count >= shift.MaxWorkers %}
+                            <span class="status-badge status-active">AT CAPACITY</span>
+                        {% elif shift.assigned_count >= shift.MaxWorkers * 0.8 %}
+                            <span class="status-badge status-warning">HIGH UTIL</span>
+                        {% elif shift.assigned_count >= shift.MaxWorkers * 0.5 %}
+                            <span class="status-badge status-active">MODERATE</span>
+                        {% else %}
+                            <span class="status-badge status-inactive">LOW UTIL</span>
+                        {% endif %}
+                    {% else %}
+                        <span class="status-badge status-inactive">NO DATA</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="empty-state">No shift data available.</p>
+    {% endif %}
+</div>
+{% endblock %}

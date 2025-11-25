@@ -1,0 +1,326 @@
+{% extends 'base.html' %}
+
+{% block title %}Query 3C - Safety Gear Compliance{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header-detailed">
+        <h1>🛡️ Query 3C: Safety Gear Compliance Tracking</h1>
+        <p>Monitor worker safety equipment assignment and condition status</p>
+    </div>
+
+    <div class="query-info-box">
+        <h3>🔍 What This Query Shows:</h3>
+        <p>Detailed safety gear compliance analysis including:</p>
+        <ul>
+            <li><strong>Assigned Gear Types:</strong> Number of different PPE items assigned</li>
+            <li><strong>Gear in Good Condition:</strong> Functional and safe equipment</li>
+            <li><strong>Damaged Gear:</strong> Equipment requiring replacement</li>
+            <li><strong>Currently Holding:</strong> Gear not yet returned</li>
+            <li><strong>Quality Percentage:</strong> % of gear in good condition</li>
+            <li><strong>Gear Compliance Status:</strong> Classification (Compliant, Replace Gear, No Gear)</li>
+        </ul>
+        <p><strong>SQL Complexity:</strong> CASE WHEN, Conditional Aggregations, NULLIF, Multiple Conditions</p>
+    </div>
+
+    {% if workers %}
+    <div class="results-section">
+        <h2>🛠️ Worker Safety Gear Status</h2>
+        <div class="table-responsive">
+            <table class="data-table gear-table">
+                <thead>
+                    <tr>
+                        <th>Worker Name</th>
+                        <th>Role</th>
+                        <th>Assigned Gear</th>
+                        <th>Good Condition</th>
+                        <th>Damaged</th>
+                        <th>Holding</th>
+                        <th>Quality %</th>
+                        <th>Gear Types</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for worker in workers %}
+                    <tr class="status-{{ worker.gear_status|lower|replace(' ', '-') }}">
+                        <td><strong>{{ worker.name }}</strong></td>
+                        <td><span class="badge">{{ worker.role }}</span></td>
+                        <td><span class="gear-count">{{ worker.assigned_gear }}</span></td>
+                        <td><span class="good-badge">{{ worker.good_condition }}</span></td>
+                        <td>
+                            {% if worker.damaged_gear > 0 %}
+                                <span class="damaged-badge">{{ worker.damaged_gear }}</span>
+                            {% else %}
+                                <span class="safe-badge">0</span>
+                            {% endif %}
+                        </td>
+                        <td><span class="holding-badge">{{ worker.currently_holding }}</span></td>
+                        <td>
+                            <strong>{{ worker.quality_pct }}%</strong>
+                        </td>
+                        <td><small>{{ worker.gear_types }}</small></td>
+                        <td>
+                            {% if worker.gear_status == 'COMPLIANT' %}
+                                <span class="compliance-badge compliant">✓ COMPLIANT</span>
+                            {% elif worker.gear_status == 'REPLACE GEAR' %}
+                                <span class="compliance-badge replace">⚠️ REPLACE GEAR</span>
+                            {% else %}
+                                <span class="compliance-badge no-gear">❌ NO GEAR</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="insights-section">
+        <h2>💡 Compliance Insights</h2>
+        <div class="insights-grid">
+            <div class="insight-card">
+                <h4>Compliant Workers</h4>
+                <p><strong>{{ workers|selectattr('gear_status', 'equalto', 'COMPLIANT')|list|length }}</strong></p>
+                <p>Proper equipment assigned</p>
+            </div>
+            <div class="insight-card">
+                <h4>Need Replacement</h4>
+                <p><strong>{{ workers|selectattr('gear_status', 'equalto', 'REPLACE GEAR')|list|length }}</strong></p>
+                <p>Quality below 70%</p>
+            </div>
+            <div class="insight-card">
+                <h4>Total Gear Items</h4>
+                <p><strong>{{ workers|sum(attribute='assigned_gear') }}</strong></p>
+                <p>Across all workers</p>
+            </div>
+            <div class="insight-card">
+                <h4>Average Quality</h4>
+                <p><strong>{{ (workers|sum(attribute='quality_pct') / workers|length)|round(1) }}%</strong></p>
+                <p>Average condition</p>
+            </div>
+        </div>
+    </div>
+
+    {% else %}
+    <div class="empty-state">
+        <p>No safety gear data available.</p>
+    </div>
+    {% endif %}
+
+    <div class="sql-explanation">
+        <h3>🔍 SQL Query Breakdown</h3>
+        <div class="code-block">
+            <pre>SELECT 
+    w.WorkerID, w.Name, w.Role,
+    COUNT(DISTINCT wg.GearID) AS AssignedGearTypes,
+    LISTAGG(sg.GearType, ', ') WITHIN GROUP (ORDER BY sg.GearType) AS GearAssigned,
+    COUNT(CASE WHEN wg.Condition = 'Good' THEN wg.GearID END) AS GoodCondition,
+    COUNT(CASE WHEN wg.Condition IN ('Fair', 'Poor', 'Damaged') THEN wg.GearID END) AS DamagedGear,
+    ROUND(COUNT(CASE WHEN wg.Condition = 'Good' THEN 1 END) * 100 / 
+          NULLIF(COUNT(DISTINCT wg.GearID), 0), 2) AS QualityPercent,
+    CASE 
+        WHEN COUNT(DISTINCT wg.GearID) = 0 THEN 'NO GEAR ASSIGNED'
+        WHEN QualityPercent < 70 THEN 'REPLACE GEAR'
+        ELSE 'COMPLIANT'
+    END AS ComplianceStatus
+FROM Worker w
+LEFT JOIN Worker_Gear wg ON w.WorkerID = wg.WorkerID
+LEFT JOIN Safety_Gear sg ON wg.GearID = sg.GearID
+GROUP BY w.WorkerID, w.Name, w.Role;</pre>
+        </div>
+    </div>
+
+    <div style="margin-top: 30px; text-align: center;">
+        <a href="{{ url_for('index') }}" class="btn btn-secondary">← Back to Dashboard</a>
+    </div>
+</div>
+
+<style>
+.page-header-detailed {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 40px;
+    border-radius: 8px;
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+.page-header-detailed h1 {
+    margin: 0 0 10px 0;
+    font-size: 32px;
+}
+
+.query-info-box {
+    background: #f8f9fa;
+    border-left: 4px solid #667eea;
+    padding: 20px;
+    border-radius: 5px;
+    margin-bottom: 30px;
+}
+
+.results-section {
+    margin-bottom: 40px;
+}
+
+.results-section h2 {
+    color: #333;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.gear-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 5px;
+}
+
+.gear-table thead {
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.gear-table th {
+    padding: 12px;
+    text-align: left;
+    font-weight: 600;
+    color: #495057;
+}
+
+.gear-table td {
+    padding: 12px;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.badge {
+    background-color: #667eea;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.gear-count {
+    background-color: #e3f2fd;
+    color: #1976d2;
+    padding: 4px 8px;
+    border-radius: 3px;
+    font-weight: 600;
+}
+
+.good-badge {
+    background-color: #c8e6c9;
+    color: #1b5e20;
+    padding: 4px 8px;
+    border-radius: 3px;
+    font-weight: 600;
+}
+
+.damaged-badge {
+    background-color: #ffcdd2;
+    color: #c62828;
+    padding: 4px 8px;
+    border-radius: 3px;
+    font-weight: 600;
+}
+
+.safe-badge {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+    padding: 4px 8px;
+    border-radius: 3px;
+}
+
+.holding-badge {
+    background-color: #fff3e0;
+    color: #e65100;
+    padding: 4px 8px;
+    border-radius: 3px;
+}
+
+.compliance-badge {
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.compliance-badge.compliant {
+    background-color: #c8e6c9;
+    color: #1b5e20;
+}
+
+.compliance-badge.replace {
+    background-color: #ffccbc;
+    color: #bf360c;
+}
+
+.compliance-badge.no-gear {
+    background-color: #ffcdd2;
+    color: #b71c1c;
+}
+
+.insights-section {
+    margin: 40px 0;
+}
+
+.insights-section h2 {
+    color: #333;
+    margin-bottom: 20px;
+}
+
+.insights-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.insight-card {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+}
+
+.insight-card h4 {
+    margin: 0 0 10px 0;
+    color: #666;
+}
+
+.insight-card p {
+    margin: 5px 0;
+    color: #999;
+}
+
+.sql-explanation {
+    background: #f5f5f5;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 20px;
+    margin-top: 40px;
+}
+
+.code-block {
+    background: #1e1e1e;
+    color: #d4d4d4;
+    padding: 15px;
+    border-radius: 4px;
+    overflow-x: auto;
+    font-family: monospace;
+    font-size: 12px;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    color: white;
+    padding: 12px 30px;
+    border-radius: 5px;
+    text-decoration: none;
+}
+</style>
+{% endblock %}

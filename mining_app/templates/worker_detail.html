@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}{{ worker.Name }} - Worker Detail{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>👤 Worker Profile: {{ worker.Name }}</h2>
+    <a href="{{ url_for('workers_list') }}" class="btn btn-secondary">← Back to Workers</a>
+</div>
+
+<div class="detail-grid">
+    <div class="detail-section">
+        <h3>📋 Personal Information</h3>
+        <dl class="detail-list">
+            <dt>Worker ID:</dt>
+            <dd>{{ worker.WorkerID }}</dd>
+            <dt>Name:</dt>
+            <dd>{{ worker.Name }}</dd>
+            <dt>Age:</dt>
+            <dd>{{ worker.Age }}</dd>
+            <dt>Role:</dt>
+            <dd><span class="badge">{{ worker.Role }}</span></dd>
+            <dt>Contact:</dt>
+            <dd>{{ worker.Contact or 'N/A' }}</dd>
+            <dt>Employment Status:</dt>
+            <dd><span class="status-badge status-{{ worker.EmploymentStatus|lower }}">{{ worker.EmploymentStatus }}</span></dd>
+            <dt>Hire Date:</dt>
+            <dd>{{ worker.HireDate.strftime('%Y-%m-%d') if worker.HireDate else 'N/A' }}</dd>
+            <dt>Salary:</dt>
+            <dd>₹{{ "{:,.2f}".format(worker.Salary) if worker.Salary else 'N/A' }}</dd>
+        </dl>
+    </div>
+</div>
+
+<div class="detail-grid">
+    <div class="detail-section">
+        <h3>⚠️ Safety Incidents ({{ incidents|length }})</h3>
+        {% if incidents %}
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Incident ID</th>
+                    <th>Date</th>
+                    <th>Type</th>
+                    <th>Severity</th>
+                    <th>Location</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for incident in incidents %}
+                <tr>
+                    <td><a href="{{ url_for('incident_detail', incident_id=incident.IncidentID) }}">#{{ incident.IncidentID }}</a></td>
+                    <td>{{ incident.IncidentDate.strftime('%Y-%m-%d') }}</td>
+                    <td>{{ incident.IncidentType }}</td>
+                    <td><span class="severity-badge severity-{{ incident.Severity }}">{{ incident.Severity }}/5</span></td>
+                    <td>{{ incident.Location }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="empty-state">✓ No incidents recorded</p>
+        {% endif %}
+    </div>
+
+    <div class="detail-section">
+        <h3>📚 Training Records ({{ trainings|length }})</h3>
+        {% if trainings %}
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Course</th>
+                    <th>Training Date</th>
+                    <th>Valid Until</th>
+                    <th>Level</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for training in trainings %}
+                <tr>
+                    <td>{{ training.Course }}</td>
+                    <td>{{ training.TrainingDate.strftime('%Y-%m-%d') }}</td>
+                    <td>{{ training.ValidUntil.strftime('%Y-%m-%d') if training.ValidUntil else 'N/A' }}</td>
+                    <td><span class="badge">{{ training.TrainingLevel }}</span></td>
+                    <td><span class="status-badge status-{{ training.TrainingStatus|lower }}">{{ training.TrainingStatus }}</span></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="empty-state">No training records found</p>
+        {% endif %}
+    </div>
+
+    <div class="detail-section">
+        <h3>🏭 Equipment Used ({{ equipment_used|length }})</h3>
+        {% if equipment_used %}
+        <ul class="equipment-list">
+            {% for equip in equipment_used %}
+            <li>
+                <strong>{{ equip.Type }}</strong> ({{ equip.Model }})
+                - <a href="{{ url_for('equipment_detail', equip_id=equip.EquipmentID) }}">View Details</a>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p class="empty-state">No equipment usage recorded</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

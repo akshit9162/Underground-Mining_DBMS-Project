@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}Risk Assessment - Mining Management{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>🎯 Worker Risk Assessment</h2>
+    <p>Risk scoring and worker classification matrix</p>
+</div>
+
+<div class="analytics-section">
+    <h3>🚨 Risk Classification</h3>
+    {% if risk_data %}
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Worker ID</th>
+                <th>Name</th>
+                <th>Role</th>
+                <th>Department</th>
+                <th>Incidents</th>
+                <th>Avg Severity</th>
+                <th>Shifts</th>
+                <th>Risk Score</th>
+                <th>Risk Category</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in risk_data %}
+            <tr {% if row.risk_category == 'CRITICAL RISK' %}class="critical-risk-row"{% elif row.risk_category == 'HIGH RISK' %}class="warning-row"{% endif %}>
+                <td>{{ row.worker_id }}</td>
+                <td><a href="{{ url_for('worker_detail', worker_id=row.worker_id) }}">{{ row.name }}</a></td>
+                <td>{{ row.role }}</td>
+                <td>{{ row.dept or 'N/A' }}</td>
+                <td>{{ row.incidents }}</td>
+                <td>{{ row.avg_severity }}/5</td>
+                <td>{{ row.shifts }}</td>
+                <td style="font-weight: bold;">{{ row.risk_score }}</td>
+                <td>
+                    {% if row.risk_category == 'CRITICAL RISK' %}
+                        <span class="risk-badge critical">{{ row.risk_category }}</span>
+                    {% elif row.risk_category == 'HIGH RISK' %}
+                        <span class="risk-badge high">{{ row.risk_category }}</span>
+                    {% elif row.risk_category == 'MEDIUM RISK' %}
+                        <span class="risk-badge medium">{{ row.risk_category }}</span>
+                    {% else %}
+                        <span class="risk-badge low">{{ row.risk_category }}</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="empty-state">No risk data available.</p>
+    {% endif %}
+</div>
+
+<div class="info-section">
+    <h3>📌 Risk Score Calculation</h3>
+    <p>Risk Score = (Incidents × 2) + (Avg Severity × 3) + (Shifts × 0.1)</p>
+    <ul>
+        <li><strong>CRITICAL RISK (>15):</strong> Immediate retraining and role reassessment required</li>
+        <li><strong>HIGH RISK (10-15):</strong> Enhanced monitoring and safety training needed</li>
+        <li><strong>MEDIUM RISK (5-10):</strong> Regular safety refresher courses recommended</li>
+        <li><strong>LOW RISK (<5):</strong> Continue standard safety protocols</li>
+    </ul>
+</div>
+{% endblock %}

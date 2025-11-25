@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}Incidents - Mining Management{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>⚠️ Safety Incidents</h2>
+    <p>Track and monitor all reported incidents</p>
+</div>
+
+{% if incidents %}
+<table class="data-table">
+    <thead>
+        <tr>
+            <th>Incident ID</th>
+            <th>Date</th>
+            <th>Location</th>
+            <th>Type</th>
+            <th>Severity</th>
+            <th>Status</th>
+            <th>Reported By</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for incident in incidents %}
+        <tr>
+            <td>#{{ incident.IncidentID }}</td>
+            <td>{{ incident.IncidentDate.strftime('%Y-%m-%d') }}</td>
+            <td>{{ incident.Location }}</td>
+            <td><span class="badge">{{ incident.IncidentType }}</span></td>
+            <td>
+                <span class="severity-badge severity-{{ incident.Severity }}">
+                    {{ incident.Severity }}/5
+                </span>
+            </td>
+            <td><span class="status-badge status-{{ incident.ResolutionStatus|lower }}">{{ incident.ResolutionStatus }}</span></td>
+            <td>
+                {% if incident.ReportedBy %}
+                    {% set reporter = get_worker(incident.ReportedBy) %}
+                    {{ reporter.Name if reporter else 'Unknown' }}
+                {% else %}
+                    Unknown
+                {% endif %}
+            </td>
+            <td><a href="{{ url_for('incident_detail', incident_id=incident.IncidentID) }}" class="btn btn-small">View</a></td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- Pagination -->
+<div class="pagination">
+    {% if pagination.has_prev %}
+        <a href="{{ url_for('incidents_list', page=pagination.prev_num) }}" class="btn btn-small">← Previous</a>
+    {% endif %}
+    
+    <span class="pagination-info">Page {{ pagination.page }} of {{ pagination.pages }}</span>
+    
+    {% if pagination.has_next %}
+        <a href="{{ url_for('incidents_list', page=pagination.next_num) }}" class="btn btn-small">Next →</a>
+    {% endif %}
+</div>
+{% else %}
+<div class="empty-state">
+    <p>No incidents recorded. <a href="{{ url_for('init_database') }}">Initialize database</a> to load sample data.</p>
+</div>
+{% endif %}
+{% endblock %}

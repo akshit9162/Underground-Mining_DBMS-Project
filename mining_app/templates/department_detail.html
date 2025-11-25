@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}{{ dept.DeptName }} - Department Detail{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>🏢 {{ dept.DeptName }}</h2>
+    <a href="{{ url_for('departments_list') }}" class="btn btn-secondary">← Back to Departments</a>
+</div>
+
+<div class="detail-grid">
+    <div class="detail-section">
+        <h3>📋 Department Information</h3>
+        <dl class="detail-list">
+            <dt>Department ID:</dt>
+            <dd>{{ dept.DepartmentID }}</dd>
+            <dt>Name:</dt>
+            <dd>{{ dept.DeptName }}</dd>
+            <dt>Location:</dt>
+            <dd>{{ dept.Location or 'N/A' }}</dd>
+            <dt>Safety Budget:</dt>
+            <dd>₹{{ "{:,.2f}".format(dept.SafetyBudget) if dept.SafetyBudget else 'N/A' }}</dd>
+        </dl>
+    </div>
+</div>
+
+<div class="detail-grid">
+    <div class="detail-section">
+        <h3>👥 Workers ({{ workers|length }})</h3>
+        {% if workers %}
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Worker ID</th>
+                    <th>Name</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th>Salary</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for worker in workers %}
+                <tr>
+                    <td><a href="{{ url_for('worker_detail', worker_id=worker.WorkerID) }}">{{ worker.WorkerID }}</a></td>
+                    <td>{{ worker.Name }}</td>
+                    <td>{{ worker.Role }}</td>
+                    <td><span class="status-badge status-{{ worker.EmploymentStatus|lower }}">{{ worker.EmploymentStatus }}</span></td>
+                    <td>₹{{ "{:,.2f}".format(worker.Salary) if worker.Salary else 'N/A' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="empty-state">No workers in this department</p>
+        {% endif %}
+    </div>
+
+    <div class="detail-section">
+        <h3>⚠️ Department Incidents ({{ incidents|length }})</h3>
+        {% if incidents %}
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Incident ID</th>
+                    <th>Date</th>
+                    <th>Type</th>
+                    <th>Severity</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for incident in incidents %}
+                <tr>
+                    <td><a href="{{ url_for('incident_detail', incident_id=incident.IncidentID) }}">#{{ incident.IncidentID }}</a></td>
+                    <td>{{ incident.IncidentDate.strftime('%Y-%m-%d') }}</td>
+                    <td>{{ incident.IncidentType }}</td>
+                    <td><span class="severity-badge severity-{{ incident.Severity }}">{{ incident.Severity }}/5</span></td>
+                    <td><span class="status-badge status-{{ incident.ResolutionStatus|lower }}">{{ incident.ResolutionStatus }}</span></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="empty-state">✓ No incidents recorded for this department</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Department Scorecard - Mining Management{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>📊 Department Performance Scorecard</h2>
+    <p>Comprehensive department-level metrics and KPIs</p>
+</div>
+
+<div class="analytics-section">
+    <h3>🏢 Department Metrics</h3>
+    {% if departments %}
+    <table class="data-table" style="font-size: 0.9em;">
+        <thead>
+            <tr>
+                <th>Department</th>
+                <th>Workers</th>
+                <th>Active</th>
+                <th>Incidents</th>
+                <th>Avg Severity</th>
+                <th>Maintenance Events</th>
+                <th>Maint Cost</th>
+                <th>Safety Rank</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for dept in departments %}
+            <tr {% if dept.AvgIncidentSeverity and dept.AvgIncidentSeverity >= 3.5 %}class="warning-row"{% endif %}>
+                <td><a href="{{ url_for('department_detail', dept_id=dept.DepartmentID) }}">{{ dept.DeptName }}</a></td>
+                <td>{{ dept.worker_count or 0 }}</td>
+                <td>{{ dept.active_workers or 0 }}</td>
+                <td>{{ dept.incident_count or 0 }}</td>
+                <td>{{ "%.2f"|format(dept.avg_severity or 0) }}/5</td>
+                <td>{{ dept.maint_count or 0 }}</td>
+                <td>₹{{ "{:,.0f}".format(dept.maint_cost or 0) }}</td>
+                <td style="font-weight: bold;">{{ dept.SafetyRank or 'N/A' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="empty-state">No department data available.</p>
+    {% endif %}
+</div>
+{% endblock %}

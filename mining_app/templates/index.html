@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Mining Management{% endblock %}
+
+{% block content %}
+<div class="dashboard-hero">
+    <h2>Welcome to Underground Mining Management System</h2>
+    <p>Real-time monitoring and analytics for workers and equipment</p>
+    <a href="{{ url_for('init_database') }}" class="btn btn-primary" style="margin-top: 20px;">Initialize Database with Sample Data</a>
+</div>
+
+<div class="dashboard-grid">
+    <div class="dashboard-card stats-card">
+        <h3>Active Workers</h3>
+        <div class="stat-value">{{ total_workers }}</div>
+        <p class="stat-label">Employees on duty</p>
+    </div>
+    
+    <div class="dashboard-card stats-card">
+        <h3>Safety Incidents</h3>
+        <div class="stat-value">{{ total_incidents }}</div>
+        <p class="stat-label">Reported this year</p>
+    </div>
+    
+    <div class="dashboard-card stats-card danger">
+        <h3>Critical Incidents</h3>
+        <div class="stat-value">{{ critical_incidents }}</div>
+        <p class="stat-label">Severity level ≥ 4</p>
+    </div>
+    
+    <div class="dashboard-card stats-card">
+        <h3>Available Equipment</h3>
+        <div class="stat-value">{{ available_equipment }}</div>
+        <p class="stat-label">Ready for use</p>
+    </div>
+    
+    <div class="dashboard-card stats-card warning">
+        <h3>Avg Incident Severity</h3>
+        <div class="stat-value">{{ avg_severity }}/5</div>
+        <p class="stat-label">Severity score</p>
+    </div>
+</div>
+
+<div class="dashboard-sections">
+    <div class="section-grid">
+        <div class="section-card">
+            <h3>👥 Workforce Management</h3>
+            <ul>
+                <li><a href="{{ url_for('workers_list') }}">View All Workers</a></li>
+                <li><a href="{{ url_for('worker_utilization') }}">Worker Utilization</a></li>
+                <li><a href="{{ url_for('training_compliance') }}">Training Compliance</a></li>
+                <li><a href="{{ url_for('risk_assessment') }}">Risk Assessment</a></li>
+            </ul>
+        </div>
+        
+        <div class="section-card">
+            <h3>🏭 Equipment Management</h3>
+            <ul>
+                <li><a href="{{ url_for('equipment_list') }}">Equipment Inventory</a></li>
+                <li><a href="{{ url_for('equipment_performance') }}">Performance Analysis</a></li>
+                <li><a href="{{ url_for('equipment_detail', equip_id=1) }}">Equipment Details</a></li>
+            </ul>
+        </div>
+        
+        <div class="section-card">
+            <h3>⚠️ Safety & Incidents</h3>
+            <ul>
+                <li><a href="{{ url_for('incidents_list') }}">All Incidents</a></li>
+                <li><a href="{{ url_for('safety_dashboard') }}">Safety Dashboard</a></li>
+                <li><a href="{{ url_for('risk_assessment') }}">Worker Risk Scores</a></li>
+            </ul>
+        </div>
+        
+        <div class="section-card">
+            <h3>📊 Operations</h3>
+            <ul>
+                <li><a href="{{ url_for('departments_list') }}">Departments</a></li>
+                <li><a href="{{ url_for('shift_utilization') }}">Shift Utilization</a></li>
+                <li><a href="{{ url_for('department_scorecard') }}">Department Scorecard</a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<div class="info-section">
+    <h3>📋 System Features</h3>
+    <p>This comprehensive mining management system includes:</p>
+    <ul>
+        <li><strong>Worker Management:</strong> Track worker details, roles, departments, and employment status</li>
+        <li><strong>Equipment Tracking:</strong> Monitor equipment usage, maintenance schedules, and transfer history</li>
+        <li><strong>Safety Incidents:</strong> Report and track all incidents with severity classification</li>
+        <li><strong>Training Records:</strong> Maintain worker certifications and training history</li>
+        <li><strong>Shift Management:</strong> Assign workers to shifts and track utilization</li>
+        <li><strong>Maintenance Records:</strong> Schedule and track equipment maintenance</li>
+        <li><strong>Risk Assessment:</strong> Calculate worker risk scores based on incidents and equipment usage</li>
+        <li><strong>Analytics & Dashboards:</strong> View comprehensive reports and performance metrics</li>
+    </ul>
+</div>
+{% endblock %}

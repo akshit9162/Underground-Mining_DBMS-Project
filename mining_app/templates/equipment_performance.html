@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}Equipment Performance - Mining Management{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>🏭 Equipment Performance Analysis</h2>
+    <p>Monitor equipment reliability and maintenance status</p>
+</div>
+
+<div class="analytics-section">
+    <h3>⚙️ Equipment with Issues</h3>
+    {% if problem_equipment %}
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Equipment ID</th>
+                <th>Type</th>
+                <th>Model</th>
+                <th>Usage Count</th>
+                <th>Issue Count</th>
+                <th>Issue Rate</th>
+                <th>Maintenance Count</th>
+                <th>Total Maint Cost</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for equip in problem_equipment %}
+            <tr {% if equip.usage_count and equip.issue_count and (equip.issue_count / equip.usage_count * 100) > 15 %}class="warning-row"{% endif %}>
+                <td>{{ equip.EquipmentID }}</td>
+                <td>{{ equip.Type }}</td>
+                <td>{{ equip.Model }}</td>
+                <td>{{ equip.usage_count or 0 }}</td>
+                <td>{{ equip.issue_count or 0 }}</td>
+                <td>{% if equip.usage_count %}{{ "%.1f"|format((equip.issue_count or 0) / equip.usage_count * 100) }}%{% else %}N/A{% endif %}</td>
+                <td>{{ equip.maint_count or 0 }}</td>
+                <td>₹{{ "{:,.2f}".format(equip.total_maint_cost or 0) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="empty-state">No equipment data available.</p>
+    {% endif %}
+</div>
+
+<div class="analytics-section">
+    <h3>⏰ Maintenance Due</h3>
+    {% if maintenance_due %}
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Maintenance ID</th>
+                <th>Equipment</th>
+                <th>Last Maintenance</th>
+                <th>Next Due Date</th>
+                <th>Type</th>
+                <th>Cost</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for maint in maintenance_due %}
+            <tr class="warning-row">
+                <td>#{{ maint.MaintenanceID }}</td>
+                <td>{{ maint.EquipmentID }}</td>
+                <td>{{ maint.MaintDate.strftime('%Y-%m-%d') if maint.MaintDate else 'N/A' }}</td>
+                <td style="color: red; font-weight: bold;">{{ maint.NextDueDate.strftime('%Y-%m-%d') if maint.NextDueDate else 'N/A' }}</td>
+                <td>{{ maint.MaintenanceType }}</td>
+                <td>₹{{ "{:,.2f}".format(maint.Cost or 0) }}</td>
+                <td><span class="status-badge status-overdue">OVERDUE</span></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="empty-state" style="color: green;">✓ All maintenance schedules are up to date!</p>
+    {% endif %}
+</div>
+{% endblock %}

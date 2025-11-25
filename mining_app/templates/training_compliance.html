@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Training Compliance - Mining Management{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>📚 Training & Certification Compliance</h2>
+    <p>Track worker certifications and training status</p>
+</div>
+
+<div class="analytics-section">
+    <h3>📋 Training Records Summary</h3>
+    {% if training_data %}
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Worker ID</th>
+                <th>Name</th>
+                <th>Role</th>
+                <th>Total Trainings</th>
+                <th>Completed</th>
+                <th>Expired</th>
+                <th>Certification Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in training_data %}
+            <tr {% if row.expired and row.expired > 0 %}class="warning-row"{% endif %}>
+                <td>{{ row.WorkerID }}</td>
+                <td><a href="{{ url_for('worker_detail', worker_id=row.WorkerID) }}">{{ row.Name }}</a></td>
+                <td>{{ row.Role }}</td>
+                <td>{{ row.total_trainings or 0 }}</td>
+                <td><span class="badge">{{ row.completed or 0 }}</span></td>
+                <td>{% if row.expired %}<span class="badge warning">{{ row.expired }}</span>{% else %}<span class="badge success">0</span>{% endif %}</td>
+                <td>
+                    {% if row.completed and row.completed >= 3 %}
+                        <span class="status-badge status-active">HIGHLY CERTIFIED</span>
+                    {% elif row.completed and row.completed >= 1 %}
+                        <span class="status-badge status-active">CERTIFIED</span>
+                    {% else %}
+                        <span class="status-badge status-inactive">NO CERTS</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="empty-state">No training data available.</p>
+    {% endif %}
+</div>
+{% endblock %}

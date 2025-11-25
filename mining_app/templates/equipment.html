@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block title %}Equipment - Mining Management{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>🏭 Equipment Inventory</h2>
+    <p>Monitor and manage mining equipment</p>
+    <a href="{{ url_for('add_equipment') }}" class="btn btn-primary" style="float: right;">+ Add New Equipment</a>
+</div>
+
+<div class="filter-section">
+    <label for="status">Filter by Status:</label>
+    <select id="status" onchange="window.location.href='?status=' + this.value">
+        <option value="All" {% if selected_status == 'All' %}selected{% endif %}>All Statuses</option>
+        {% for status in statuses %}
+            <option value="{{ status }}" {% if selected_status == status %}selected{% endif %}>{{ status }}</option>
+        {% endfor %}
+    </select>
+</div>
+
+{% if equipment %}
+<table class="data-table">
+    <thead>
+        <tr>
+            <th>Equipment ID</th>
+            <th>Type</th>
+            <th>Model</th>
+            <th>Status</th>
+            <th>Current Operator</th>
+            <th>Purchase Date</th>
+            <th>Last Maintenance</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for equip in equipment %}
+        <tr>
+            <td>{{ equip.EquipmentID }}</td>
+            <td>{{ equip.Type }}</td>
+            <td>{{ equip.Model }}</td>
+            <td><span class="status-badge status-{{ equip.Status|lower|replace(' ', '-') }}">{{ equip.Status }}</span></td>
+            <td>
+                {% if equip.OperatedBy %}
+                    {% set operator = get_worker(equip.OperatedBy) %}
+                    {{ operator.Name if operator else 'Unknown' }}
+                {% else %}
+                    No operator
+                {% endif %}
+            </td>
+            <td>{{ equip.PurchaseDate.strftime('%Y-%m-%d') if equip.PurchaseDate else 'N/A' }}</td>
+            <td>{{ equip.LastMaintenance.strftime('%Y-%m-%d') if equip.LastMaintenance else 'Never' }}</td>
+            <td>
+                <a href="{{ url_for('equipment_detail', equip_id=equip.EquipmentID) }}" class="btn btn-small">View</a>
+                <form method="POST" action="{{ url_for('delete_equipment', equipment_id=equip.EquipmentID) }}" class="inline-form" style="display: inline;" onsubmit="return confirm('Delete this equipment?');">
+                    <button type="submit" class="btn btn-small btn-danger">Delete</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- Pagination -->
+<div class="pagination">
+    {% if pagination.has_prev %}
+        <a href="{{ url_for('equipment_list', page=pagination.prev_num, status=selected_status) }}" class="btn btn-small">← Previous</a>
+    {% endif %}
+    
+    <span class="pagination-info">Page {{ pagination.page }} of {{ pagination.pages }}</span>
+    
+    {% if pagination.has_next %}
+        <a href="{{ url_for('equipment_list', page=pagination.next_num, status=selected_status) }}" class="btn btn-small">Next →</a>
+    {% endif %}
+</div>
+{% else %}
+<div class="empty-state">
+    <p>No equipment found. <a href="{{ url_for('init_database') }}">Initialize database</a> to load sample data.</p>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block title %}{{ equipment.Type }} {{ equipment.Model }} - Equipment Detail{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>🏭 Equipment: {{ equipment.Type }} {{ equipment.Model }}</h2>
+    <a href="{{ url_for('equipment_list') }}" class="btn btn-secondary">← Back to Equipment</a>
+</div>
+
+<div class="detail-grid">
+    <div class="detail-section">
+        <h3>📋 Equipment Information</h3>
+        <dl class="detail-list">
+            <dt>Equipment ID:</dt>
+            <dd>{{ equipment.EquipmentID }}</dd>
+            <dt>Type:</dt>
+            <dd>{{ equipment.Type }}</dd>
+            <dt>Model:</dt>
+            <dd>{{ equipment.Model }}</dd>
+            <dt>Status:</dt>
+            <dd><span class="status-badge status-{{ equipment.Status|lower|replace(' ', '-') }}">{{ equipment.Status }}</span></dd>
+            <dt>Current Operator:</dt>
+            <dd>{% if operator %}{{ operator.Name }}{% else %}No operator assigned{% endif %}</dd>
+            <dt>Purchase Date:</dt>
+            <dd>{{ equipment.PurchaseDate.strftime('%Y-%m-%d') if equipment.PurchaseDate else 'N/A' }}</dd>
+            <dt>Last Maintenance:</dt>
+            <dd>{{ equipment.LastMaintenance.strftime('%Y-%m-%d') if equipment.LastMaintenance else 'Never' }}</dd>
+            <dt>Maintenance Schedule:</dt>
+            <dd>{{ equipment.MaintenanceSchedule or 'N/A' }}</dd>
+            <dt>Current Value:</dt>
+            <dd>₹{{ "{:,.2f}".format(equipment.DepreciationValue) if equipment.DepreciationValue else 'N/A' }}</dd>
+        </dl>
+    </div>
+</div>
+
+<div class="detail-grid">
+    <div class="detail-section">
+        <h3>📊 Usage Records (Last 20)</h3>
+        {% if usage_records %}
+        <table class="data-table" style="font-size: 0.85em;">
+            <thead>
+                <tr>
+                    <th>Worker</th>
+                    <th>Shift ID</th>
+                    <th>Start Time</th>
+                    <th>Hours Used</th>
+                    <th>Outcome</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for usage in usage_records %}
+                <tr>
+                    <td>{{ usage.WorkerID }}</td>
+                    <td>{{ usage.ShiftID }}</td>
+                    <td>{{ usage.StartTime.strftime('%Y-%m-%d %H:%M') if usage.StartTime else 'N/A' }}</td>
+                    <td>{{ "%.2f"|format(usage.HoursUsed) if usage.HoursUsed else 'N/A' }}</td>
+                    <td><span class="status-badge">{{ usage.Outcome }}</span></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="empty-state">No usage records found</p>
+        {% endif %}
+    </div>
+
+    <div class="detail-section">
+        <h3>🔧 Maintenance Records</h3>
+        {% if maintenance_records %}
+        <table class="data-table" style="font-size: 0.85em;">
+            <thead>
+                <tr>
+                    <th>Maintenance ID</th>
+                    <th>Date</th>
+                    <th>Type</th>
+                    <th>Cost</th>
+                    <th>Next Due</th>
+                    <th>Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for maint in maintenance_records %}
+                <tr>
+                    <td>#{{ maint.MaintenanceID }}</td>
+                    <td>{{ maint.MaintDate.strftime('%Y-%m-%d') if maint.MaintDate else 'N/A' }}</td>
+                    <td><span class="badge">{{ maint.MaintenanceType }}</span></td>
+                    <td>₹{{ "{:,.2f}".format(maint.Cost) if maint.Cost else 'N/A' }}</td>
+                    <td>{{ maint.NextDueDate.strftime('%Y-%m-%d') if maint.NextDueDate else 'N/A' }}</td>
+                    <td>{{ maint.Notes[:40] if maint.Notes else 'N/A' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="empty-state">No maintenance records found</p>
+        {% endif %}
+    </div>
+
+    <div class="detail-section">
+        <h3>🔄 Transfer History</h3>
+        {% if transfers %}
+        <table class="data-table" style="font-size: 0.85em;">
+            <thead>
+                <tr>
+                    <th>Transfer ID</th>
+                    <th>Date</th>
+                    <th>From Worker</th>
+                    <th>To Worker</th>
+                    <th>Reason</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for transfer in transfers %}
+                <tr>
+                    <td>#{{ transfer.TransferID }}</td>
+                    <td>{{ transfer.TransferDate.strftime('%Y-%m-%d') if transfer.TransferDate else 'N/A' }}</td>
+                    <td>{{ transfer.FromWorkerID or 'N/A' }}</td>
+                    <td>{{ transfer.ToWorkerID or 'N/A' }}</td>
+                    <td>{{ transfer.TransferReason }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="empty-state">No transfer history</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

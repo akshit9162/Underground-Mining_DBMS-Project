@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block title %}Safety Dashboard - Mining Management{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>⚠️ Safety Dashboard</h2>
+    <p>Comprehensive safety analytics and incident management</p>
+</div>
+
+<div class="analytics-section">
+    <h3>🔴 High-Risk Incidents (Severity ≥ 4)</h3>
+    {% if high_risk_incidents %}
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Incident ID</th>
+                <th>Date</th>
+                <th>Location</th>
+                <th>Type</th>
+                <th>Severity</th>
+                <th>Description</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for incident in high_risk_incidents %}
+            <tr class="high-risk-row">
+                <td>#{{ incident.IncidentID }}</td>
+                <td>{{ incident.IncidentDate.strftime('%Y-%m-%d') }}</td>
+                <td>{{ incident.Location }}</td>
+                <td>{{ incident.IncidentType }}</td>
+                <td><span class="severity-badge severity-{{ incident.Severity }}">{{ incident.Severity }}/5</span></td>
+                <td>{{ incident.Description[:60] }}...</td>
+                <td><span class="status-badge status-{{ incident.ResolutionStatus|lower }}">{{ incident.ResolutionStatus }}</span></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="empty-state">No high-risk incidents at this time.</p>
+    {% endif %}
+</div>
+
+<div class="analytics-section">
+    <h3>👥 Worker Safety Profiles (Top Incident Workers)</h3>
+    {% if worker_incidents %}
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Worker ID</th>
+                <th>Name</th>
+                <th>Role</th>
+                <th>Incident Count</th>
+                <th>Avg Severity</th>
+                <th>Risk Level</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in worker_incidents %}
+            <tr {% if row.incident_count and row.incident_count >= 3 %}class="warning-row"{% endif %}>
+                <td>{{ row.WorkerID }}</td>
+                <td><a href="{{ url_for('worker_detail', worker_id=row.WorkerID) }}">{{ row.Name }}</a></td>
+                <td>{{ row.Role }}</td>
+                <td>{{ row.incident_count or 0 }}</td>
+                <td>{{ "%.2f"|format(row.avg_severity or 0) }}/5</td>
+                <td>
+                    {% if row.incident_count and row.incident_count >= 3 %}
+                        <span class="risk-badge high">HIGH</span>
+                    {% elif row.incident_count and row.incident_count >= 1 %}
+                        <span class="risk-badge medium">MEDIUM</span>
+                    {% else %}
+                        <span class="risk-badge low">LOW</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="empty-state">No incident data available.</p>
+    {% endif %}
+</div>
+
+<div class="analytics-section">
+    <h3>📍 Incident Hotspots</h3>
+    {% if hotspots %}
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Location</th>
+                <th>Total Incidents</th>
+                <th>Avg Severity</th>
+                <th>Risk Level</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for spot in hotspots %}
+            <tr {% if spot.avg_severity and spot.avg_severity >= 3.5 %}class="warning-row"{% endif %}>
+                <td>{{ spot.Location }}</td>
+                <td>{{ spot.total_incidents }}</td>
+                <td>{{ "%.2f"|format(spot.avg_severity or 0) }}/5</td>
+                <td>
+                    {% if spot.avg_severity and spot.avg_severity >= 3.5 %}
+                        <span class="risk-badge high">HIGH RISK</span>
+                    {% elif spot.avg_severity and spot.avg_severity >= 2.5 %}
+                        <span class="risk-badge medium">MODERATE RISK</span>
+                    {% else %}
+                        <span class="risk-badge low">LOW RISK</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="empty-state">No location data available.</p>
+    {% endif %}
+</div>
+{% endblock %}

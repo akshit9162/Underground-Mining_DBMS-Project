@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}Workers - Mining Management{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>👥 Workers Management</h2>
+    <p>View and manage all mining workers and staff</p>
+    <a href="{{ url_for('add_worker') }}" class="btn btn-primary" style="float: right;">+ Add New Worker</a>
+</div>
+
+<div class="filter-section">
+    <label for="status">Filter by Status:</label>
+    <select id="status" onchange="window.location.href='?status=' + this.value">
+        <option value="All" {% if selected_status == 'All' %}selected{% endif %}>All Statuses</option>
+        {% for status in statuses %}
+            <option value="{{ status }}" {% if selected_status == status %}selected{% endif %}>{{ status }}</option>
+        {% endfor %}
+    </select>
+</div>
+
+{% if workers %}
+<table class="data-table">
+    <thead>
+        <tr>
+            <th>Worker ID</th>
+            <th>Name</th>
+            <th>Age</th>
+            <th>Role</th>
+            <th>Status</th>
+            <th>Salary</th>
+            <th>Hire Date</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for worker in workers %}
+        <tr>
+            <td>{{ worker.WorkerID }}</td>
+            <td>{{ worker.Name }}</td>
+            <td>{{ worker.Age }}</td>
+            <td><span class="badge">{{ worker.Role }}</span></td>
+            <td><span class="status-badge status-{{ worker.EmploymentStatus|lower }}">{{ worker.EmploymentStatus }}</span></td>
+            <td>₹{{ "{:,.2f}".format(worker.Salary) }}</td>
+            <td>{{ worker.HireDate.strftime('%Y-%m-%d') if worker.HireDate else 'N/A' }}</td>
+            <td><a href="{{ url_for('worker_detail', worker_id=worker.WorkerID) }}" class="btn btn-small">View</a>
+            <form method="POST" action="{{ url_for('delete_worker', worker_id=worker.WorkerID) }}" class="inline-form" style="display: inline;" onsubmit="return confirm('Delete this worker?');">
+                <button type="submit" class="btn btn-small btn-danger">Delete</button>
+            </form></td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- Pagination -->
+<div class="pagination">
+    {% if pagination.has_prev %}
+        <a href="{{ url_for('workers_list', page=pagination.prev_num, status=selected_status) }}" class="btn btn-small">← Previous</a>
+    {% endif %}
+    
+    <span class="pagination-info">Page {{ pagination.page }} of {{ pagination.pages }}</span>
+    
+    {% if pagination.has_next %}
+        <a href="{{ url_for('workers_list', page=pagination.next_num, status=selected_status) }}" class="btn btn-small">Next →</a>
+    {% endif %}
+</div>
+{% else %}
+<div class="empty-state">
+    <p>No workers found. <a href="{{ url_for('init_database') }}">Initialize database</a> to load sample data.</p>
+</div>
+{% endif %}
+{% endblock %}

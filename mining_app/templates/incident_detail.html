@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}Incident #{{ incident.IncidentID }} - Detail{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>⚠️ Incident #{{ incident.IncidentID }}</h2>
+    <a href="{{ url_for('incidents_list') }}" class="btn btn-secondary">← Back to Incidents</a>
+</div>
+
+<div class="detail-grid">
+    <div class="detail-section">
+        <h3>📋 Incident Details</h3>
+        <dl class="detail-list">
+            <dt>Incident ID:</dt>
+            <dd>#{{ incident.IncidentID }}</dd>
+            <dt>Date:</dt>
+            <dd>{{ incident.IncidentDate.strftime('%Y-%m-%d') }}</dd>
+            <dt>Location:</dt>
+            <dd>{{ incident.Location }}</dd>
+            <dt>Type:</dt>
+            <dd><span class="badge">{{ incident.IncidentType }}</span></dd>
+            <dt>Severity:</dt>
+            <dd><span class="severity-badge severity-{{ incident.Severity }}">{{ incident.Severity }}/5</span></dd>
+            <dt>Status:</dt>
+            <dd><span class="status-badge status-{{ incident.ResolutionStatus|lower }}">{{ incident.ResolutionStatus }}</span></dd>
+            <dt>Investigation Required:</dt>
+            <dd>{% if incident.InvestigationRequired == 'Y' %}<span class="badge warning">YES</span>{% else %}<span class="badge">NO</span>{% endif %}</dd>
+            <dt>Description:</dt>
+            <dd>{{ incident.Description }}</dd>
+        </dl>
+    </div>
+</div>
+
+<div class="detail-grid">
+    <div class="detail-section">
+        <h3>👥 Involved Workers</h3>
+        {% if involved_workers %}
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Worker ID</th>
+                    <th>Name</th>
+                    <th>Role in Incident</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for worker, role in involved_workers %}
+                <tr>
+                    <td><a href="{{ url_for('worker_detail', worker_id=worker.WorkerID) }}">{{ worker.WorkerID }}</a></td>
+                    <td>{{ worker.Name }}</td>
+                    <td><span class="badge">{{ role }}</span></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="empty-state">No workers linked to this incident</p>
+        {% endif %}
+    </div>
+
+    <div class="detail-section">
+        <h3>🏭 Involved Equipment</h3>
+        {% if involved_equipment %}
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Equipment ID</th>
+                    <th>Type</th>
+                    <th>Model</th>
+                    <th>Role in Incident</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for equip, role in involved_equipment %}
+                <tr>
+                    <td><a href="{{ url_for('equipment_detail', equip_id=equip.EquipmentID) }}">{{ equip.EquipmentID }}</a></td>
+                    <td>{{ equip.Type }}</td>
+                    <td>{{ equip.Model }}</td>
+                    <td><span class="badge">{{ role }}</span></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="empty-state">No equipment linked to this incident</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

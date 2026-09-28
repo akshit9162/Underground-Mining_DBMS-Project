@@ -1,5 +1,7 @@
 # Underground Mining DBMS
 
+**[→ Visual walkthrough](https://akshit9162.github.io/Underground-Mining_DBMS-Project/)**
+
 A database system for managing an underground mining operation: workers, equipment, shifts,
 training, maintenance and safety incidents. It has two parts: an Oracle schema with the business
 rules enforced in the database, and a Flask web application with analytics dashboards.

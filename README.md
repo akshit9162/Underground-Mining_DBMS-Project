@@ -27,5 +27,5 @@ queries behind each dashboard.
 
 ## Contributors
 
-- **Rachit Pandey**
-- **Akshit Gupta**: _describe your part here, e.g. which tables, triggers, queries or dashboards_
+Built jointly by **Rachit Pandey** and **Akshit Gupta** across the whole project: schema,
+PL/SQL triggers and procedures, reporting queries, and the Flask application.
